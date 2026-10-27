@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¡Atrapá los pancitos!</title>
+<style>
+:root{--ink:#50351f;--cream:#fff7df;--pink:#ff7197;--blue:#63c8f3}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(#b9efff,#fff1c4);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);display:flex;justify-content:center;min-height:100vh;padding:16px}
+.wrap{width:min(100%,920px);text-align:center}.title{font-size:clamp(1.7rem,4vw,2.7rem);margin:2px 0 8px;text-shadow:2px 2px #fff}.sub{margin:0 0 12px}
+.gamebox{position:relative;border:5px solid #fff9e9;border-radius:22px;overflow:hidden;box-shadow:0 10px 30px #8d744344;background:#80d8f8}\n.gamebox.shake{animation:shake .32s linear}@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}\n.gamebox.flash-red::after{content:"";position:absolute;inset:0;background:#ff1f2d66;pointer-events:none;animation:redflash .28s ease-out forwards}@keyframes redflash{from{opacity:.9}to{opacity:0}}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.hud{position:absolute;inset:12px 14px auto;display:flex;justify-content:space-between;gap:8px;pointer-events:none;font-weight:800}
+.pill{background:#fff8e8eF;border:2px solid #f4c879;border-radius:14px;padding:7px 12px;box-shadow:0 2px 0 #9b6d36}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#17344b66;padding:18px}
+.panel{background:#fff8e8;border:4px solid #f4c879;border-radius:24px;padding:clamp(16px,4vw,30px);max-width:480px;box-shadow:0 8px 0 #986a3d;text-align:center}
+.panel h2{font-size:clamp(1.5rem,4vw,2.2rem);margin:0 0 8px}.panel p{line-height:1.45}
+button{font:inherit;font-weight:800;border:0;border-radius:14px;padding:12px 20px;background:#ff7b9e;color:#fff;box-shadow:0 4px 0 #c84b70;cursor:pointer}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 #c84b70}
+.controls{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.controls button{min-width:60px;background:#fff8e8;color:#50351f;box-shadow:0 3px 0 #d5a45b;border:1px solid #f1d19a}
+.note{font-size:.92rem;opacity:.85;margin:8px}
+.charpanel{max-width:560px;width:100%}
+.chars{display:flex;gap:14px;justify-content:center;margin:14px 0 4px}
+.charcard{flex:1;max-width:210px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;background:#fffdf3;color:var(--ink);border:4px solid #f4c879;border-radius:20px;box-shadow:0 5px 0 #d5a45b;transition:transform .12s,border-color .12s}
+.charcard img{width:100%;height:150px;object-fit:contain}
+.charcard:hover,.charcard:focus-visible{transform:translateY(-4px);border-color:var(--pink);outline:none}
+.charcard:active{transform:translateY(1px);box-shadow:0 1px 0 #d5a45b}
+.linkbtn{background:none;color:var(--ink);box-shadow:none;text-decoration:underline;padding:8px 12px;margin-top:6px;opacity:.8}
+.linkbtn:active{box-shadow:none;transform:none}
+#playerSprite{position:absolute;display:none;pointer-events:none;object-fit:contain;filter:drop-shadow(0 4px 3px #0003)}
+@media(min-width:700px){.mobile-controls{display:none}}
+
+.mobile-controls button {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+
+/* Ajustes para celulares en posición vertical */
+@media (max-width: 699px) {
+  body {
+    padding: 8px;
+  }
+
+  .gamebox {
+    overflow: hidden;
+  }
+
+  #charSelect {
+    overflow-y: auto;
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .charpanel {
+    margin: auto 0;
+    padding: 12px;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  .charpanel h2 {
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+  }
+
+  .charpanel p {
+    margin: 6px 0;
+    font-size: 0.9rem;
+  }
+
+  .chars {
+    gap: 8px;
+    margin: 8px 0 4px;
+  }
+
+  .charcard {
+    padding: 6px;
+    gap: 4px;
+    border-width: 3px;
+    font-size: 0.85rem;
+  }
+
+  .charcard img {
+    height: clamp(65px, 15vh, 115px);
+  }
+}
+
+
+/* Ajustes para la pantalla de instrucciones en móviles */
+@media (max-width: 699px) {
+  #overlay {
+    overflow-y: auto;
+    padding: 10px;
+    align-items: flex-start;
+  }
+
+  #overlay .panel {
+    margin: auto 0;
+    padding: 14px;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  #overlay .panel h2 {
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+  }
+
+  #overlay .panel p {
+    font-size: 0.88rem;
+    line-height: 1.3;
+    margin: 8px 0;
+  }
+
+  #overlay .panel button {
+    padding: 10px 16px;
+  }
+}
+
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="title">🥖 ¡Atrapá los pancitos! 🥦</h1>
+  <p class="sub">Ayudá a Juancito a comer; ¡cuidado con las cunas!</p>
+  <div class="gamebox">
+    <canvas id="game" width="900" height="560" aria-label="Juego de atrapar pancitos"></canvas>
+    <img id="playerSprite" alt="">
+    <div class="hud"><div class="pill">🥖 <span id="score">0</span> puntos</div><div class="pill">⭐ Nivel <span id="level">1</span></div><div class="pill">❤️ <span id="lives">3</span></div></div>
+    <div class="overlay" id="charSelect">
+      <div class="panel charpanel">
+        <h2>¿Quién va a jugar?</h2>
+        <p>Elegí tu personaje para atrapar la comidita.</p>
+        <div class="chars">
+         <button class="charcard"
+				data-src="https://i.ibb.co/N2CYVSHT/Imagen1.gif"
+				data-name="Personaje 1">
+		  <img src="https://i.ibb.co/N2CYVSHT/Imagen1.gif" alt="Personaje 1">
+		  <span>Chanchito mumumish real</span>
+		</button>
+
+		<button class="charcard"
+				data-src="https://i.ibb.co/fVN6VX5X/Imagen2.gif"
+				data-name="Personaje 2">
+		  <img src="https://i.ibb.co/fVN6VX5X/Imagen2.gif" alt="Personaje 2">
+		  <span>Chanchito con IA</span>
+		</button>
+        </div>
+      </div>
+    </div>
+    <div class="overlay" id="overlay" style="display:none">
+     
+	 
+	<div class="panel">
+	  <h2 id="panelTitle">¡A jugar!</h2>
+	  <p id="panelText">Pancitos: 10 puntos. Fideos sin salsa: 20. Brócoli: 50. ¡Evitá las cunas con Zzz! Tenés 3 vidas.</p>
+
+	  <img
+		id="finalImage"
+		src="https://i.ibb.co/8LzHXbrk/final.gif"
+		alt="Final del juego"
+		style="display:none; max-width:100%; max-height:180px; object-fit:contain; border-radius:12px; margin:8px auto;"
+	  >
+
+	  <p><b>← →</b> o <b>A / D</b> para moverte. En celular, usá los botones de abajo.</p>
+	  <button id="startBtn">¡Vamos!</button>
+	  <br>
+	  <button id="changeBtn" class="linkbtn">← Cambiar personaje</button>
+	</div>
+
+	 
+    </div>
+  </div>
+  <div class="controls mobile-controls"><button id="leftBtn" aria-label="Mover a la izquierda">⬅️</button><button id="rightBtn" aria-label="Mover a la derecha">➡️</button></div>
+  <div class="controls"><button id="musicBtn">🎵 Música: sí</button></div>
+  <p class="note">🥖 Pan = 10 puntos · 🍝 Fideos sin salsa = 20 · 🥦 Brócoli = 50. Si chocás una cuna con Zzz, perdés una vida. ¡Los brócolis caen más rápido!</p>
+</div>
+<script>
+const PHOTO = "data:image/jpeg;base64,/==";
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),gamebox=document.querySelector('.gamebox');
+const scoreEl=document.getElementById('score'),levelEl=document.getElementById('level'),livesEl=document.getElementById('lives'),overlay=document.getElementById('overlay');
+const panelTitle=document.getElementById('panelTitle'),panelText=document.getElementById('panelText'),startBtn=document.getElementById('startBtn');
+
+const finalImage = document.getElementById('finalImage');
+
+let photo=new Image();photo.src=PHOTO;
+const charSelect=document.getElementById('charSelect'),sprite=document.getElementById('playerSprite'),changeBtn=document.getElementById('changeBtn');
+const introTitle=panelTitle.textContent,introText=panelText.textContent;
+let selectedChar=null,spriteFailed=false;
+sprite.addEventListener('error',()=>{spriteFailed=true;sprite.style.display='none'});
+function pickCharacter(src,name){selectedChar=src;spriteFailed=false;finalImage.style.display = 'none';sprite.alt=name;sprite.src=src;sprite.style.display='block';charSelect.style.display='none';panelTitle.textContent=introTitle;panelText.textContent=introText;startBtn.textContent='¡Vamos!';overlay.style.display='flex';startBtn.focus();draw()}
+function showCharSelect(){stopMusic();running=false;cancelAnimationFrame(raf);selectedChar=null;sprite.style.display='none';overlay.style.display='none';charSelect.style.display='flex'}
+function placeSprite(){sprite.style.left=((player.x-player.w/2)/W*100)+'%';sprite.style.top=((player.y-player.h/2)/H*100)+'%';sprite.style.width=(player.w/W*100)+'%';sprite.style.height=(player.h/H*100)+'%'}
+let running=false,score=0,level=1,lives=3,floatingTexts=[],player={x:450,y:445,w:112,h:122,speed:6},items=[],keys={},lastSpawn=0,lastTime=0,broccoliCount=0,raf=0, soundOn=false, audioCtx=null;
+const W=900,H=560;
+const CRIB_CHANCE=.65; // probabilidad de que lo que cae sea una cuna (el resto es comida)
+function roundedRect(x,y,w,h,r,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+
+const backgroundImage = new Image();
+backgroundImage.src = "https://i.ibb.co/jkbMjT9q/fondo.png";
+
+function background() {
+  if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
+    ctx.drawImage(backgroundImage, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = '#80d8f8';
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+function drawBread(x,y,size){ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(y/28)*.12);ctx.fillStyle='#a95c23';ctx.beginPath();ctx.ellipse(0,0,size*.58,size*.36,-.15,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f5ae42';ctx.beginPath();ctx.ellipse(0,-2,size*.52,size*.29,-.15,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#ffe3a0';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-size*.18,-size*.1);ctx.lineTo(size*.15,size*.08);ctx.stroke();ctx.restore()}
+function drawBroccoli(x,y,size){ctx.save();ctx.translate(x,y);ctx.fillStyle='#63b846';ctx.fillRect(-size*.12,0,size*.24,size*.45);ctx.fillStyle='#378f39';for(const [dx,dy,r] of [[-12,0,14],[0,-8,17],[13,1,13],[0,8,14]]){ctx.beginPath();ctx.arc(dx*size/32,dy*size/32,r*size/32,0,Math.PI*2);ctx.fill()}ctx.fillStyle='#80d34e';ctx.beginPath();ctx.arc(-size*.08,-size*.2,size*.16,0,Math.PI*2);ctx.fill();ctx.restore()}
+
+function drawPasta(x,y,size){
+ ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(y/20)*.1);
+ // White plate with a subtle rim and plain, un-sauced pasta spirals
+ ctx.fillStyle='#b7c8d4';ctx.beginPath();ctx.ellipse(0,4,size*.67,size*.47,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#fffdf3';ctx.beginPath();ctx.ellipse(0,0,size*.64,size*.44,0,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle='#d8e0df';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,size*.52,size*.34,0,0,Math.PI*2);ctx.stroke();
+ ctx.strokeStyle='#e9bd55';ctx.lineWidth=4;ctx.lineCap='round';
+ for(let i=0;i<5;i++){let a=i*1.18;ctx.beginPath();ctx.moveTo(Math.cos(a)*size*.12,Math.sin(a)*size*.08);ctx.bezierCurveTo(Math.cos(a)*size*.3-size*.1,Math.sin(a)*size*.25,Math.cos(a)*size*.35+size*.08,Math.sin(a)*size*.2,Math.cos(a)*size*.23,Math.sin(a)*size*.05);ctx.stroke()}
+ ctx.restore()
+}
+function drawCrib(x,y,size){
+ ctx.save();ctx.translate(x,y);
+ // Wooden baby crib: this is the sleepy hazard that costs a life
+ ctx.fillStyle='#8b572f';ctx.fillRect(-size*.48,-size*.02,size*.96,size*.48);
+ ctx.fillStyle='#e5b875';ctx.fillRect(-size*.42,size*.02,size*.84,size*.36);
+ ctx.strokeStyle='#9b6539';ctx.lineWidth=4;
+ ctx.beginPath();ctx.moveTo(-size*.48,-size*.02);ctx.lineTo(-size*.48,size*.5);ctx.moveTo(size*.48,-size*.02);ctx.lineTo(size*.48,size*.5);ctx.stroke();
+ for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(i*size*.15,-size*.01);ctx.lineTo(i*size*.15,size*.39);ctx.stroke()}
+ ctx.fillStyle='#fff2d7';ctx.beginPath();ctx.ellipse(0,size*.05,size*.34,size*.12,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#50351f';ctx.font=`bold ${size*.32}px system-ui`;ctx.fillText('Zzz',size*.2,-size*.35);
+ ctx.restore()
+}
+
+function drawBaby(){
+ // Use a crop centered on the baby from the supplied family photo; rounded clipping keeps the focus on the baby.
+ if(photo.complete && photo.naturalWidth){
+  ctx.save();ctx.beginPath();ctx.roundRect(player.x-player.w/2,player.y-player.h/2,player.w,player.h,28);ctx.clip();
+  // Original photo is 1444x963; this crop isolates the baby's face and torso as closely as possible.
+  ctx.drawImage(photo,665,275,300,395,player.x-player.w/2,player.y-player.h/2,player.w,player.h);
+  ctx.restore();ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.beginPath();ctx.roundRect(player.x-player.w/2,player.y-player.h/2,player.w,player.h,28);ctx.stroke();
+ }else{ctx.fillStyle='#f6c9a6';ctx.beginPath();ctx.arc(player.x,player.y-14,37,0,7);ctx.fill();ctx.fillStyle='#4e382c';ctx.beginPath();ctx.arc(player.x,player.y-27,33,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#3d6eaa';ctx.fillRect(player.x-30,player.y+20,60,48)}
+}
+function draw(){
+ background();items.forEach(it=>{if(it.type==='bread')drawBread(it.x,it.y,it.size);else if(it.type==='pasta')drawPasta(it.x,it.y,it.size);else if(it.type==='broccoli')drawBroccoli(it.x,it.y,it.size);else drawCrib(it.x,it.y,it.size)});
+ if(spriteFailed)drawBaby();placeSprite();
+ // soft ground shadow
+ ctx.fillStyle='#3b8d4c55';ctx.beginPath();ctx.ellipse(player.x,player.y+player.h/2+3,48,9,0,0,7);ctx.fill();
+ drawFloatingTexts();
+}
+function beep(kind='coin'){
+ if(!soundOn)return;
+ try{
+  audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
+  const now=audioCtx.currentTime;
+  // Original bright arcade coin jingle (not a recording of any game sound)
+  const notes=kind==='hit'?[220,165]:[988,1318];
+  notes.forEach((freq,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='square';o.frequency.setValueAtTime(freq,now+i*.075);g.gain.setValueAtTime(.0001,now+i*.075);g.gain.exponentialRampToValueAtTime(kind==='hit'?.045:.035,now+i*.075+.008);g.gain.exponentialRampToValueAtTime(.0001,now+i*.075+.09);o.connect(g);g.connect(audioCtx.destination);o.start(now+i*.075);o.stop(now+i*.075+.1)});
+ }catch(e){}
+}
+// ===== Música MP3 externa =====
+const MUSIC={on:true,playing:false,STEP:0.20};
+const backgroundMusic = new Audio('https://files.catbox.moe/pcwofp.mp3');
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.35;
+backgroundMusic.preload = 'auto';
+function ensureAudio(){audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}
+function startMusic(){
+ if(!MUSIC.on)return;
+ backgroundMusic.playbackRate = level===1 ? 1 : (level===2 ? 1.1 : 1.2);
+ backgroundMusic.play().then(()=>{MUSIC.playing=true}).catch(e=>console.log('No se pudo iniciar la música:',e));
+}
+function stopMusic(){backgroundMusic.pause();backgroundMusic.currentTime=0;MUSIC.playing=false}
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(audioCtx)audioCtx.suspend();}else if(audioCtx)audioCtx.resume()});
+
+function getLevelForScore(s){return s>=200?3:(s>=100?2:1)}
+function applyLevel(force=false){
+ const newLevel=getLevelForScore(score);
+ if(force || newLevel!==level){
+  level=newLevel;
+  levelEl.textContent=level;
+  // Cada nivel acelera la caída y la música MP3.
+  MUSIC.STEP=level===1?.20:(level===2?.17:.145);
+  backgroundMusic.playbackRate=level===1?1:(level===2?1.1:1.2);
+  if(!force) showLevelUp();
+ }
+}
+function showLevelUp(){
+ floatingTexts.push({x:W/2,y:115,text:'¡NIVEL '+level+'!',life:70,maxLife:70,big:true});
+}
+function addScore(points,x,y){
+ score+=points;scoreEl.textContent=score;
+ floatingTexts.push({x,y,text:'+'+points,life:55,maxLife:55,big:false});
+ applyLevel();
+}
+function updateFloatingTexts(dt){
+ for(let i=floatingTexts.length-1;i>=0;i--){const f=floatingTexts[i];f.y-=.8*dt;f.life-=dt;if(f.life<=0)floatingTexts.splice(i,1)}
+}
+function drawFloatingTexts(){
+ ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+ for(const f of floatingTexts){
+  const a=Math.max(0,f.life/f.maxLife);ctx.globalAlpha=a;
+  ctx.font=f.big?'900 30px system-ui':'900 25px system-ui';ctx.lineWidth=5;ctx.strokeStyle='#50351f';ctx.strokeText(f.text,f.x,f.y);ctx.fillStyle=f.big?'#ffe36e':'#fff8d0';ctx.fillText(f.text,f.x,f.y)
+ }
+ ctx.restore();
+}
+function reset(){score=0;level=1;lives=3;items=[];floatingTexts=[];player.x=W/2;player.y=445;lastSpawn=0;broccoliCount=0;scoreEl.textContent=score;livesEl.textContent=lives;levelEl.textContent=level;MUSIC.STEP=.20}
+function start(){cancelAnimationFrame(raf);reset();applyLevel(true);running=true;soundOn=true;startMusic();overlay.style.display='none';lastTime=performance.now();raf=requestAnimationFrame(loop)}
+
+function end() {
+  running = false;
+  stopMusic();
+  overlay.style.display = 'flex';
+
+  const lost = lives <= 0;
+
+  panelTitle.textContent = lost
+    ? '¡Uy, es hora de mimir!!'
+    : '¡Buen trabajo chanchito mumumish!';
+
+  panelText.textContent =
+    'Puntaje final: ' + score +
+    '. ¡Volvé a jugar para intentar superar tu récord!';
+
+  finalImage.style.display = lost ? 'block' : 'none';
+
+  startBtn.textContent = 'Jugar de nuevo';
+}
+
+function loop(now){
+ if(!running)return;let dt=Math.min((now-lastTime)/16.67,2);lastTime=now;
+ if(keys.ArrowLeft||keys.a||keys.A)player.x-=player.speed*dt;
+ if(keys.ArrowRight||keys.d||keys.D)player.x+=player.speed*dt;
+ player.x=Math.max(player.w/2+4,Math.min(W-player.w/2-4,player.x));
+ updateFloatingTexts(dt);
+ let interval=Math.max(330,700-score*.8);
+ if(now-lastSpawn>interval){
+  const roll=Math.random();let type;
+  if(roll<CRIB_CHANCE)type='crib';else{const f=Math.random();type=f<.25?'broccoli':(f<.55?'pasta':'bread')}
+  const size=type==='crib'?58:(type==='pasta'?39:(type==='broccoli'?38:34));
+  // Broccoli drops faster than food and the crib is a little slower but wider.
+  let speed=2.2+Math.random()*1.1+score*.002;
+  if(type==='broccoli')speed=4.2+Math.random()*1.7+score*.0025;
+  if(type==='crib')speed=2.4+Math.random()*.8+score*.001;
+  items.push({type,x:35+Math.random()*(W-70),y:-45,size,speed});lastSpawn=now
+ }
+ for(let i=items.length-1;i>=0;i--){let it=items[i];it.y+=it.speed*dt;
+  let hit=Math.abs(it.x-player.x)<player.w*.43+it.size*.35&&Math.abs(it.y-player.y)<player.h*.38+it.size*.35;
+  if(hit){
+   if(it.type==='bread'){addScore(10,it.x,it.y);beep('coin')}
+   else if(it.type==='pasta'){addScore(20,it.x,it.y);beep('coin')}
+   else if(it.type==='broccoli'){addScore(50,it.x,it.y);beep('coin')}
+   else{
+    lives--;livesEl.textContent=lives;beep('hit');
+    gamebox.classList.remove('shake','flash-red');void gamebox.offsetWidth;gamebox.classList.add('shake','flash-red');
+    setTimeout(()=>gamebox.classList.remove('shake','flash-red'),350);
+    if(lives<=0){items.splice(i,1);draw();end();return}
+   }
+   items.splice(i,1)
+  }
+  else if(it.y>H+40)items.splice(i,1);
+ }
+ draw();raf=requestAnimationFrame(loop)
+}
+document.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)||(e.key===' '&&selectedChar))e.preventDefault();keys[e.key]=true;if(e.key===' '&&!running&&selectedChar)start()});
+document.addEventListener('keyup',e=>keys[e.key]=false);
+
+function holdButton(id, key) {
+  const el = document.getElementById(id);
+
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    keys[key] = true;
+
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch (_) {}
+  });
+
+  function release(e) {
+    if (e) e.preventDefault();
+    keys[key] = false;
+  }
+
+  el.addEventListener('pointerup', release);
+  el.addEventListener('pointercancel', release);
+  el.addEventListener('lostpointercapture', release);
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+window.addEventListener('blur', () => {
+  keys.ArrowLeft = false;
+  keys.ArrowRight = false;
+});
+
+holdButton('leftBtn','ArrowLeft');holdButton('rightBtn','ArrowRight');
+startBtn.addEventListener('click',()=>{soundOn=true;start()});
+document.querySelectorAll('.charcard').forEach(b=>b.addEventListener('click',()=>pickCharacter(b.dataset.src,b.dataset.name)));
+changeBtn.addEventListener('click',showCharSelect);
+const musicBtn=document.getElementById('musicBtn');
+musicBtn.addEventListener('click',()=>{MUSIC.on=!MUSIC.on;musicBtn.textContent=MUSIC.on?'🎵 Música: sí':'🔇 Música: no';if(!MUSIC.on)stopMusic();else if(running)startMusic();musicBtn.blur()});
+draw();
+</script>
+</body>
+</html>
